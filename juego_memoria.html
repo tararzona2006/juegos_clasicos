@@ -1,0 +1,185 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>CANVAS Memoria Números</title>
+<style>
+body{
+	width:960px;
+	margin:0 auto;
+}
+h1{
+	text-align:center;
+}
+#miCanvas{
+	border:dotted 2px rgb(115, 0, 255);
+	background:rgb(89, 68, 162);	
+}
+</style>
+<script>
+var ctx;
+var primerCarta = true;
+var cartaPrimera;
+var cartaSegunda;
+var colorFrente = "yellow";
+var colorAtras = "blue";
+var colorCanvas = "green";
+var cartaLon = 30;
+var teclas_array = new Array();
+var inicioX = 45;
+var inicioY = 50;
+var margen = 30;
+var cartaAncho = 4 * cartaLon;
+var cartaAlto = 4 * cartaLon;
+var iguales;
+var tiempo;
+var cartas = 0;
+//
+function Carta(x, y, ancho, alto,info){
+	this.x = x;
+	this.y = y;
+	this.ancho = ancho;
+	this.alto = alto;
+	this.info = info;
+	this.dibuja = dibujaCarta;	
+}
+
+function tablero(){
+	var i;
+	var carta;
+	var x = inicioX;
+	var y = inicioY;
+	for(i=3; i<9;i++){
+		carta = new Carta(x, y, cartaAncho, cartaAlto, i);
+		teclas_array.push(carta);
+		carta.dibuja();
+		//
+		carta = new Carta(x, y+cartaAlto+margen, cartaAncho, cartaAlto,i);
+		teclas_array.push(carta);
+		carta.dibuja();
+		//
+		x = x + cartaAncho + margen;
+	}
+}
+function barajea(){
+	var i;
+	var k;
+	var temporal;
+	var lon = teclas_array.length;
+	var j;
+	for(j=0; j<3*lon; j++){
+		i = Math.floor(Math.random()*lon);
+		k = Math.floor(Math.random()*lon);
+		temporal = teclas_array[i].info;
+		teclas_array[i].info = teclas_array[k].info;
+		teclas_array[k].info = temporal;
+	}
+}
+//
+function dibujaCarta(){
+	ctx.fillStyle = colorAtras;
+	ctx.fillRect(this.x, this.y, this.ancho, this.alto);	
+}
+//
+function ajusta(xx, yy){
+	var posCanvas = canvas.getBoundingClientRect();
+	var x = xx - posCanvas.left;
+	var y = yy - posCanvas.top;
+	return {x:x, y:y}	
+}
+function selecciona(e){
+	var pos = ajusta(e.clientX, e.clientY);
+	var x = pos.x;
+	var y = pos.y;
+	var i;
+	for(i=0; i<teclas_array.length;i++){
+		var carta = teclas_array[i];
+		//alert(carta.x+", "+carta.y+", "+x+", "+y);
+		if(carta.x >=0){
+			if((x>carta.x)&&
+			(x<carta.x+carta.ancho)&&
+			(y>carta.y)&&
+			(y<carta.y+carta.alto)){
+				if((primerCarta)||(i!=cartaPrimera)) break;	
+			}
+		}	
+	}
+	if(i<teclas_array.length){
+		if(primerCarta){
+			cartaPrimera = i;
+			primerCarta = false;
+			pinta(carta);
+		} else {
+			cartaSegunda = i;
+			pinta(carta);
+			if(teclas_array[i].info == teclas_array[cartaPrimera].info){
+				iguales = true;
+				cartas++;
+				pintaAciertos();
+			} else {
+				iguales = false;
+			}
+			primerCarta = true;
+			setTimeout(volteaCarta,1000);
+		}
+	}
+}
+function pintaAciertos(){
+	ctx.save()
+	ctx.clearRect(0, 340, canvas.width/2, 100);
+	ctx.font = "bold 40px Comic";
+	ctx.fillStyle = "black";
+	ctx.fillText("Aciertos: "+String(cartas),30,380);
+	ctx.restore();
+}
+function pinta(c){
+	ctx.fillStyle = colorFrente;
+	ctx.fillRect(c.x, c.y, cartaAncho, cartaAlto);
+	ctx.font = "bold 40px Comic";
+	ctx.fillStyle = "red";
+	ctx.fillText(String(c.info),c.x+cartaAncho*0.5-10,c.y+cartaAlto*0.5+10);
+}
+function volteaCarta(){
+	if(!iguales){
+		teclas_array[cartaPrimera].dibuja();
+		teclas_array[cartaSegunda].dibuja();
+	} else {
+		ctx.clearRect(teclas_array[cartaSegunda].x,
+					 teclas_array[cartaSegunda].y,
+					 teclas_array[cartaSegunda].ancho,
+					 teclas_array[cartaSegunda].alto);
+		ctx.clearRect(teclas_array[cartaPrimera].x,
+					 teclas_array[cartaPrimera].y,
+					 teclas_array[cartaPrimera].ancho,
+					 teclas_array[cartaPrimera].alto);
+		teclas_array[cartaSegunda].x = -1;
+		teclas_array[cartaPrimera].x = -1;
+	}
+}
+window.onload = function(){
+	canvas = document.getElementById("miCanvas");
+	if(canvas && canvas.getContext){
+		ctx = canvas.getContext("2d");
+		if(ctx){
+			canvas.addEventListener("click", selecciona, false);
+			tablero();
+			tiempo = new Date();
+			tiempo = Number(tiempo.getTime());
+			barajea();
+			pintaAciertos();
+		} else {
+			alert("Error al crear tu contexto");	
+		}
+	}
+}
+</script>
+</head>
+
+<body>
+<h1>Memoria de números</h1>
+<canvas id="miCanvas" width="960px" height="400px">
+Tu navegador no soporta CANVAS
+</canvas>
+<br>
+</body>
+</html>
